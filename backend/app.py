@@ -11,6 +11,12 @@ mp_pose = mp.solutions.pose
 
 app = Flask(__name__)
 
+
+# Redirect '/' to '/api'
+@app.route('/')
+def home():
+    return redirect('/api')
+
 @app.route('/api', methods = ['GET'])
 def index():
     return render_template('request_page.html')
