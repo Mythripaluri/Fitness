@@ -35,7 +35,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="D:\Mythri\Fitness\backend\my_env"
+VIRTUAL_ENV="C:\Users\sowmya\OneDrive\Desktop\Projects\FitLens\FitLens\backend\my_env"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

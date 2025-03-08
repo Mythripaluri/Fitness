@@ -12,6 +12,8 @@ def left_curl():
     global count, direction, form  # Maintain values across frames
     
     cap = cv2.VideoCapture(0)
+    cap.set(3, 1920)  # Increase width (e.g., 1920 pixels)
+    cap.set(4, 1080)
     detector = pm.poseDetector()
     
     feedback = "LOWER YOUR ARM"
@@ -92,11 +94,11 @@ def left_curl():
 
                 #Provide Feedback Based on Accuracy
                 if posture_accuracy > 85:
-                    feedback = "Perfect Form!"
+                    feedback = ""
                 elif 60 <= posture_accuracy <= 85:
-                    feedback = "Good, but adjust slightly."
+                    feedback = ""
                 else:
-                    feedback = "Fix Your Posture!"
+                    feedback = ""
 
 
 
@@ -104,6 +106,7 @@ def left_curl():
                 cv2.putText(img, feedback, (500, 40), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
 
                 # Convert frame to JPEG
+                img = cv2.resize(img, (1400, 720))
                 ret, jpeg = cv2.imencode('.jpg', img)
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n\r\n')
