@@ -1,1 +1,1 @@
-[Watch the demo](assets/video.mp4)
+[Watch the demo](assets/demo.mp4)
