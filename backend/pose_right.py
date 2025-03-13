@@ -1,72 +1,110 @@
-
 import cv2
 import mediapipe as mp
 import numpy as np
 import PoseModule as pm
+from gtts import gTTS
+import os
+import pyglet
+import threading
+import time
 
-# Global variables to track count & direction
-count = 0
+# Global variables
 direction = 0
-form = 0  # Ensures correct posture before counting
+reps = 0
+sets = 0
+last_audio_message = None  
+message_timer = 0  
 
-def right_curl():
-    global count, direction, form  # Maintain values across frames
+# Function to play audio
+def play(filename):
+    music = pyglet.media.load(filename, streaming=False)
+    music.play()
+    pyglet.clock.schedule_once(lambda dt: pyglet.app.exit(), music.duration)
+    pyglet.app.run()
+
+def play_audio(text):
+    global last_audio_message, message_timer  
+    last_audio_message = text  
+    message_timer = time.time()  
     
+    tts = gTTS(text=text, lang='en')
+    filename = "message.mp3"
+    tts.save(filename)
+    
+    audio_thread = threading.Thread(target=play, args=(filename,))
+    audio_thread.start()
+
+def right_curl(target_reps, target_sets):
+    global reps, sets, direction, last_audio_message, message_timer
+    final_message_shown = False  
+    start_time = time.time()  
+
     cap = cv2.VideoCapture(0)
+    cap.set(3, 1280)  
+    cap.set(4, 720)
     detector = pm.poseDetector()
-    
-    feedback = "LOWER YOUR ARM"
+    feedback = "KEEP YOUR BACK STRAIGHT"
 
-    with detector.pose:
-        while True:
-            ret, img = cap.read()  # Read frame
-            img = detector.findPose(img, False)
-            lmList = detector.findPosition(img, False)
+    while True:
+        ret, img = cap.read()
+        if not ret:
+            print("Failed to grab frame.")
+            break  
 
-            if len(lmList) != 0:
-                elbow = detector.findAngle(img, 12, 14, 16)  # Right elbow
-                shoulder = detector.findAngle(img, 14, 12, 24)  # Right shoulder
+        img = detector.findPose(img, False)
+        lmList = detector.findPosition(img, False)
+
+        if len(lmList) != 0:
+            elbow = detector.findAngle(img, 12, 14, 16)  # Right elbow
+            shoulder = detector.findAngle(img, 14, 12, 24)  # Right shoulder
+            
+            if elbow > 155:  # Arm fully extended (UP position)
+                feedback = "UP"
+                if direction == 0:  # Only count once when reaching UP
+                    direction = 1  
+            
+            elif elbow < 50 and direction == 1:  # Arm fully bent (DOWN position)
+                feedback = "DOWN"
+                reps += 1  
+                direction = 0  
+                print(f"Rep {reps}/{target_reps}, Set {sets}/{target_sets}")  
                 
-                # Debugging print
-                print(f'Elbow: {elbow}, Shoulder: {shoulder}, Count: {count}')
-
-                # Ensure proper posture before counting
-                if shoulder < 45:
-                    form = 1
-
-                # Convert elbow angle to percentage (motion progress)
-                per = np.interp(elbow, (50, 160), (100, 0))
-                bar = np.interp(elbow, (50, 160), (50, 380))
-
-                # Curl Motion Detection
-                if form == 1:
-                    if elbow > 160:  # Arm fully extended (UP position)
-                        feedback = "UP"
-                        if direction == 0:  # Only count once when reaching UP
-                            count += 1
-                            direction = 1  # Change direction to DOWN
+                if reps >= target_reps:
+                    if sets < target_sets:
+                        sets += 1  
+                        reps = 0  
+                        play_audio("You have completed a set!")  
                     
-                    elif elbow < 50 and direction==1:  # Arm fully bent (DOWN position)
-                        feedback = "DOWN"
-                        count+=1
-                        direction = 0  # Reset direction for next curl
+                    if sets >= target_sets and not final_message_shown:
+                        final_message_shown = True  
+                        play_audio("Target Achieved!!") 
 
-                    else:
-                        feedback = "LOWER YOUR ARM"
+        # Info Panel
+        info_panel = np.zeros((150, 1280, 3), dtype=np.uint8)
+        cv2.putText(info_panel, f"Sets: {sets}/{target_sets}", (50, 50), 
+                    cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2)
+        cv2.putText(info_panel, f"Reps: {reps}", (50, 90), 
+                    cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2)
+        cv2.putText(info_panel, f"Feedback: {feedback}", (50, 130), 
+                    cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
 
-                # Draw progress bar
-                # cv2.rectangle(img, (1080, 50), (1100, 380), (0, 255, 0), 3)
-                cv2.rectangle(img, (1080, int(bar)), (1100, 380), (0, 255, 0), cv2.FILLED)
-                cv2.putText(img, f'{int(per)}%', (950, 230), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
+        info_panel = cv2.resize(info_panel, (img.shape[1], info_panel.shape[0]))
+        final_frame = np.vstack((img, info_panel))
 
-                # Display counter
-                cv2.rectangle(img, (0, 380), (100, 480), (0, 255, 0), cv2.FILLED)
-                cv2.putText(img, str(int(count)), (25, 455), cv2.FONT_HERSHEY_PLAIN, 5, (255, 0, 0), 5)
+        # Display Audio Message at the Top (for 3 seconds)
+        if last_audio_message and (time.time() - message_timer < 3):
+            cv2.putText(final_frame, last_audio_message, (200, 50),  
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
 
-                # Display feedback
-                cv2.putText(img, feedback, (500, 40), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
+        ret, jpeg = cv2.imencode('.jpg', final_frame)
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n\r\n')
 
-                # Convert frame to JPEG
-                ret, jpeg = cv2.imencode('.jpg', img)
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n\r\n')
+        # Track elapsed time correctly
+        elapsed_time = time.time() - start_time
+        if elapsed_time >= 1800:  # 30 minutes
+            play_audio("Time's up! Exercise Complete.")
+            break  
+
+    cap.release()
+    cv2.destroyAllWindows()

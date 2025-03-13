@@ -2,103 +2,102 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import PoseModule as pm
+from gtts import gTTS
+import os
+import pyglet
+import threading
+import time
 
-# Global variables to track count & direction
-count = 0
+# Global variables
+reps = 0
+sets = 0
 direction = 0
-form = 0  # Ensures correct posture before counting
+form = 1  
+last_audio_message = None  
+message_timer = 0  
+count = 0
 
-def left_curl():
-    global count, direction, form  # Maintain values across frames
-    
+def play(filename):
+    """Play the saved audio file using pyglet."""
+    music = pyglet.media.load(filename, streaming=False)
+    music.play()
+    pyglet.clock.schedule_once(lambda dt: pyglet.app.exit(), music.duration)
+    pyglet.app.run()
+
+def play_audio(text):
+    """Convert text to speech and play it in a separate thread to reduce delay."""
+    global last_audio_message, message_timer  
+    last_audio_message = text  
+    message_timer = time.time()  
+
+    tts = gTTS(text=text, lang='en')
+    filename = "message.mp3"
+    tts.save(filename)
+
+    # ✅ Use threading instead of multiprocessing to reduce delay
+    audio_thread = threading.Thread(target=play, args=(filename,))
+    audio_thread.start()
+
+def left_curl(target_reps, target_sets):
+    global reps, sets, direction, form, last_audio_message, message_timer, count
+    final_message_shown = False  
+    start_time = time.time()  
+
     cap = cv2.VideoCapture(0)
-    cap.set(3, 1920)  # Increase width (e.g., 1920 pixels)
-    cap.set(4, 1080)
     detector = pm.poseDetector()
-    
-    feedback = "LOWER YOUR ARM"
+    feedback = "KEEP YOUR BACK STRAIGHT"
 
-    with detector.pose:
-        while True:
-            ret, img = cap.read()  # Read frame
-            img = detector.findPose(img, False)
-            lmList = detector.findPosition(img, False)
+    while True:
+        ret, img = cap.read()
+        if not ret:
+            print("Failed to grab frame.")
+            break  
 
-            if len(lmList) != 0:
-                elbow = detector.findAngle(img, 11, 13, 15)  # Left elbow
-                shoulder = detector.findAngle(img, 13, 11, 23)  # Left shoulder
-                
-                # Debugging print
-                print(f'Elbow: {elbow}, Shoulder: {shoulder}, Count: {count}')
+        img = detector.findPose(img, False)
+        lmList = detector.findPosition(img, False)
 
-                # Ensure proper posture before counting
-                if shoulder < 45:
-                    form = 1
+        if len(lmList) != 0:
+            elbow = detector.findAngle(img, 11, 13, 15)  
+            shoulder = detector.findAngle(img, 13, 11, 23) 
 
-                # Convert elbow angle to percentage (motion progress)
-                per = np.interp(elbow, (50, 160), (100, 0))
-                bar = np.interp(elbow, (50, 160), (50, 380))
+            # ✅ Provide feedback based on elbow angle
+            if elbow > 155:  
+                feedback = "UP"
+                if direction == 0:  
+                    direction = 1  
+            
+            elif elbow < 40 and direction == 1:  
+                feedback = "DOWN"
+                reps += 1  
+                direction = 0  
+                print(f"Rep {reps}/{target_reps}, Set {sets}/{target_sets}")  
 
-                if form == 1:
-                    if elbow > 160:  # Arm fully extended (UP position)
-                        feedback = "UP"
-                        if direction == 0:  # Only count once when reaching UP
-                            direction = 1  # Change direction to DOWN
-                    
-                    elif elbow < 50 and direction == 1:  # Only count when transitioning DOWN
-                        feedback = "DOWN"
-                        count += 1  # Increment the count
-                        direction = 0  # Reset direction for next curl
+                if reps >= target_reps:
+                    if sets < target_sets:
+                        sets += 1  
+                        reps = 0  
+                        play_audio("You have completed a set!")  
 
-                    else:
-                        feedback = "LOWER YOUR ARM"
+                    if sets >= target_sets and not final_message_shown:
+                        final_message_shown = True  # ✅ Prevent multiple calls
+                        play_audio("Target Achieved!!") 
 
-
-
-
-
-
-                #Calculate Posture Accuracy
-
-                ideal_elbow_angle = 90  # Midpoint of motion
-                ideal_shoulder_angle = 30  # Preferred shoulder position
-
-                # Calculate error from the ideal posture
-                elbow_error = abs(ideal_elbow_angle - elbow)
-                shoulder_error = abs(ideal_shoulder_angle - shoulder)
-
-                # Normalize errors to percentages (Lower error = Higher accuracy)
-                elbow_accuracy = max(0, 100 - (elbow_error / ideal_elbow_angle * 100))
-                shoulder_accuracy = max(0, 100 - (shoulder_error / ideal_shoulder_angle * 100))
-
-                # Average accuracy score
-                posture_accuracy = (elbow_accuracy + shoulder_accuracy) / 2
-
-
-                
-
-                # Draw progress bar
-                # cv2.rectangle(img, (1080, 50), (1100, 380), (0, 255, 0), 3)
-                cv2.rectangle(img, (1080, int(bar)), (1100, 380), (0, 255, 0), cv2.FILLED)
-                cv2.putText(img, f'{int(per)}%', (950, 230), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
-
-                # Display counter
-                #cv2.rectangle(img, (0, 380), (100, 480), (0, 255, 0), cv2.FILLED)
-                cv2.rectangle(img, (0, 350), (150, 500), (0, 255, 0), cv2.FILLED)
-
-                cv2.putText(img, str(int(count)), (25, 455), cv2.FONT_HERSHEY_PLAIN, 5, (255, 0, 0), 5)
-
-                #Display posture accuracy
-                cv2.putText(img, f'Posture: {int(posture_accuracy)}%', (500, 80), 
-                cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
+        # Info Panel
+        info_panel = np.zeros((150, 1280, 3), dtype=np.uint8)
+        cv2.putText(info_panel, f"Sets: {sets}/{target_sets}", (50, 50), 
+                    cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2)
+        cv2.putText(info_panel, f"Reps: {reps}", (50, 90), 
+                    cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2)
+        cv2.putText(info_panel, f"Feedback: {feedback}", (50, 130), 
+                    cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
 
                 #Provide Feedback Based on Accuracy
                 if posture_accuracy > 85:
-                    feedback = ""
+                    feedback = "Perfect Form!"
                 elif 60 <= posture_accuracy <= 85:
-                    feedback = ""
+                    feedback = "Good, but adjust slightly."
                 else:
-                    feedback = ""
+                    feedback = "Fix Your Posture!"
 
 
 
@@ -106,7 +105,6 @@ def left_curl():
                 cv2.putText(img, feedback, (500, 40), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
 
                 # Convert frame to JPEG
-                img = cv2.resize(img, (1400, 720))
                 ret, jpeg = cv2.imencode('.jpg', img)
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n\r\n')
