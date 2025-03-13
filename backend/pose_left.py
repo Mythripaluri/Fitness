@@ -82,6 +82,17 @@ def left_curl(target_reps, target_sets):
                         final_message_shown = True  # ✅ Prevent multiple calls
                         play_audio("Target Achieved!!") 
 
+            # ✅ Calculate posture accuracy (placeholder logic)
+            posture_accuracy = max(0, min(100, 100 - abs(90 - shoulder)))  # Example: based on shoulder angle
+
+            # ✅ Provide feedback based on accuracy
+            if posture_accuracy > 85:
+                feedback = "Perfect Form!"
+            elif 60 <= posture_accuracy <= 85:
+                feedback = "Good, but adjust slightly."
+            else:
+                feedback = "Fix Your Posture!"
+
         # Info Panel
         info_panel = np.zeros((150, 1280, 3), dtype=np.uint8)
         cv2.putText(info_panel, f"Sets: {sets}/{target_sets}", (50, 50), 
@@ -91,20 +102,18 @@ def left_curl(target_reps, target_sets):
         cv2.putText(info_panel, f"Feedback: {feedback}", (50, 130), 
                     cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
 
-                #Provide Feedback Based on Accuracy
-                if posture_accuracy > 85:
-                    feedback = "Perfect Form!"
-                elif 60 <= posture_accuracy <= 85:
-                    feedback = "Good, but adjust slightly."
-                else:
-                    feedback = "Fix Your Posture!"
+        # Display feedback
+        cv2.putText(img, feedback, (500, 40), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
 
+        # ✅ Show the frame properly (instead of Flask's yield method)
+        cv2.imshow("Live Feed", img)
 
+        # ✅ Exit on 'q' key press
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-                # Display feedback
-                cv2.putText(img, feedback, (500, 40), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0), 2)
+    cap.release()
+    cv2.destroyAllWindows()
 
-                # Convert frame to JPEG
-                ret, jpeg = cv2.imencode('.jpg', img)
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n\r\n')
+# Example usage:
+# left_curl(10, 3)  # Uncomment this line to run

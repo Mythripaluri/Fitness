@@ -76,10 +76,23 @@ def index():
 #     return Response(left_curl(),
 #                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# @app.route('/video_feed_left')
+# def video_feed_left():
+#     return Response(left_curl(),
+#                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
 @app.route('/video_feed_left')
 def video_feed_left():
-    return Response(left_curl(),
+    target_reps = request.args.get('reps', default=10, type=int)  # Default to 10 reps
+    target_sets = request.args.get('sets', default=3, type=int)   # Default to 3 sets
+
+    return Response(left_curl(target_reps, target_sets),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+
+
+
 
 @app.route('/video_feed_right')
 def video_feed_right():
@@ -108,4 +121,4 @@ def show():
     return redirect(f'/video_feed_{subject}')
 
 if __name__ == '__main__':
-    app.run(host = "0.0.0.0" , debug=False)
+    app.run(debug=True,host = "0.0.0.0" , port=5000)
