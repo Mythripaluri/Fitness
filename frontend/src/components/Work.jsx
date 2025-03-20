@@ -68,6 +68,18 @@ const Work = () => {
                         onClick={() => window.open("http://127.0.0.1:5000/video_feed_squat")}>
                         Squat
                     </button>
+                    <button className="w-[300px] px-12 py-2 rounded border-4 border-gray-400 hover:bg-slate-200 hover:text-black transition duration-300"
+                        onClick={() => window.open("http://127.0.0.1:5000/video_feed_kneetaps")}>
+                        Knee Taps
+                    </button>
+                    <button className="w-[300px] px-12 py-2 rounded border-4 border-gray-400 hover:bg-slate-200 hover:text-black transition duration-300"
+                        onClick={() => window.open("http://127.0.0.1:5000/video_feed_op")}>
+                        Overhead Pendulum
+                    </button>
+                    <button className="w-[300px] px-12 py-2 rounded border-4 border-gray-400 hover:bg-slate-200 hover:text-black transition duration-300"
+                        onClick={() => window.open("http://127.0.0.1:5000/video_feed_lunges")}>
+                        Lunges
+                    </button>
                 </div>
             </div>
         </div>

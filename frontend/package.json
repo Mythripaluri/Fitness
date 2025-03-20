@@ -28,5 +28,9 @@
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
     "vite": "^5.2.0"
-  }
+  },
+  "description": "This is a simple landing page template built using React.js with Vite as the build tool and Tailwind CSS for styling.",
+  "main": "postcss.config.js",
+  "author": "",
+  "license": "ISC"
 }
