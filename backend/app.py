@@ -3,6 +3,9 @@ from pose_left import generate_frames
 from pose_right import right_curl
 from pose_pushup import pushup
 from pose_squat import squat
+from pose_kneetaps import kneetaps
+from pose_op import op
+from pose_lunges import lunges
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -32,19 +35,34 @@ def video_feed_left():
 
 @app.route('/video_feed_right')
 def video_feed_right():
-    return Response(right_curl(),
+    return Response(right_curl(target_reps=10, target_sets=3),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/video_feed_pushup')
 def video_feed_pushup():
-    return Response(pushup(),
+    return Response(pushup(target_reps=10, target_sets=3),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/video_feed_squat')
 def video_feed_squat():
-    return Response(squat(),
+    return Response(squat(target_reps=10, target_sets=3),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
+@app.route('/video_feed_kneetaps')
+def video_feed_kneetaps():
+    return Response(kneetaps(target_reps=10, target_sets=3),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/video_feed_op')
+def video_feed_op():
+    return Response(op(target_reps=10, target_sets=3),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/video_feed_lunges')
+def video_feed_lunges():
+    return Response(lunges(target_reps=10, target_sets=3),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 @app.route('/show')
 def show():
     subject = request.args.get('sub')
