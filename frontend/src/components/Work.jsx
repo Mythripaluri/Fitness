@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import axios from "axios";
 
 const Work = () => {
@@ -42,12 +42,7 @@ const Work = () => {
                         onChange={(e) => setCounts(e.target.value)}
                         className="w-full p-2 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
                     />
-                    <button
-                        onClick={handleSubmit}
-                        className="w-full px-4 py-2 mt-2 rounded bg-gradient-to-r from-cyan-600 to-cyan-900 text-white hover:bg-cyan-200 transition duration-300"
-                    >
-                        Submit
-                    </button>
+
                 </div>
 
                 {/* Buttons to start video feeds */}
@@ -79,6 +74,12 @@ const Work = () => {
                     <button className="w-[300px] px-12 py-2 rounded border-4 border-gray-400 hover:bg-slate-200 hover:text-black transition duration-300"
                         onClick={() => window.open("http://127.0.0.1:5000/video_feed_lunges")}>
                         Lunges
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        className="w-full px-4 py-2 mt-2 rounded bg-gradient-to-r from-cyan-600 to-cyan-900 text-white hover:bg-cyan-200 transition duration-300"
+                    >
+                        Submit
                     </button>
                 </div>
             </div>

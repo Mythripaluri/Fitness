@@ -116,12 +116,11 @@ def play_audio(text):
 
     threading.Thread(target=play, daemon=True).start()
 
-def squat():
+def squat(target_reps, target_sets):
     global count, direction, form, feedback
 
     # Get user input for target count
-    target_count = int(input("Enter the number of squats you want to do: "))
-
+    
     cap = cv2.VideoCapture(0)
     detector = pm.poseDetector()
 

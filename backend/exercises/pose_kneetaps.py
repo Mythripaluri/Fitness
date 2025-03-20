@@ -19,6 +19,7 @@ last_audio_message = None
 message_timer = 0  
 final_message_shown = False  
 
+
 # Function to play audio
 def play(filename):
     music = pyglet.media.load(filename, streaming=False)
@@ -51,7 +52,7 @@ def kneetaps(target_reps, target_sets):
 
         img = detector.findPose(img, False)
         lmList = detector.findPosition(img, False)
-
+        posture_accuracy = 0 
         feedback = "Tap Your Knee!"
         if len(lmList) != 0:
             left_knee = detector.findAngle(img, 24, 26, 28)
@@ -106,8 +107,8 @@ def kneetaps(target_reps, target_sets):
                     cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2)
         cv2.putText(info_panel, f"Feedback: {feedback}", (50, 130), 
                     cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
-        cv2.putText(info_panel, f"Posture: {int(posture_accuracy)}%", (50, 170), 
-                    cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 255), 2)
+        # cv2.putText(info_panel, f"Posture: {int(posture_accuracy)}%", (50, 170), 
+        #             cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 255), 2)
 
         img[0:150, :] = info_panel
         
