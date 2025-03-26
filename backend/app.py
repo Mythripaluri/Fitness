@@ -1,6 +1,6 @@
 from flask import Flask, render_template, Response, request, redirect
 from exercises.pose_left import generate_frames
-from exercises.pose_right import right_curl
+from exercises.pose_right import generate_frames
 from exercises.pose_pushup import pushup
 from exercises.pose_squat import squat
 from exercises.pose_kneetaps import kneetaps
@@ -41,7 +41,7 @@ def video_feed_left():
 
 @app.route('/video_feed_right')
 def video_feed_right():
-    return generate_video_feed(right_curl)
+    return generate_video_feed(generate_frames)
 
 @app.route('/video_feed_pushup')
 def video_feed_pushup():
